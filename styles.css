@@ -360,3 +360,133 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
   .salary-change-summary span{margin:0}.salary-change-summary strong{font-size:16px}
   .salary-change-summary small{display:inline;font-size:10px;margin-left:6px}
 }
+
+/* Offer dialog: reference-style form presentation; fields and behavior are unchanged. */
+#offer-dialog{width:calc(100vw - 48px);height:calc(100dvh - 40px);border:1px solid #888;border-radius:4px;background:#fff;box-shadow:0 8px 36px #0005;color:#222}
+#offer-dialog::backdrop{background:#0005;backdrop-filter:none}
+#offer-dialog .offer-modal-header{position:relative;padding:0;background:#fff;border-bottom:0}
+#offer-dialog .form-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0;align-items:center}
+#offer-dialog .heading-left,#offer-dialog .heading-left>div{display:contents}
+#offer-dialog .offer-modal-header h1{grid-column:1/-1;grid-row:1;margin:0;padding:17px 70px;background:#f5f5f5;border-bottom:1px solid #c6c6c6;color:#b15a06;font-size:24px;font-weight:700;line-height:1.4;letter-spacing:0;text-align:center}
+#offer-dialog .offer-modal-header p{grid-column:1;grid-row:2;max-width:none;margin:0;padding:17px 32px 7px;color:#666;font-size:14px;line-height:1.7}
+#offer-dialog .offer-modal-header p .badge{background:none;border:0;border-radius:0;padding:0;color:#444;font-size:13px;font-weight:400}
+#offer-dialog .heading-actions{grid-column:2;grid-row:2;margin:10px 32px 0 0}
+#offer-dialog .offer-modal-close{position:absolute;right:18px;top:14px;width:34px;height:34px;border:0;border-radius:2px;color:#626262;background:none}
+#offer-dialog .offer-modal-close:hover{background:#e5e5e5}
+#offer-dialog .offer-modal-close svg{width:23px;height:23px}
+#offer-dialog .offer-modal-body{padding:7px 30px 24px;background:#fff;scroll-padding:14px;scrollbar-color:#909090 #f5f5f5;scrollbar-width:auto}
+#offer-dialog .form-card{margin:0 0 14px;border:0;border-radius:0;background:#fff;box-shadow:none}
+#offer-dialog .section-heading{padding:8px 6px 9px;gap:10px;border-bottom:1px solid #bdbdbd}
+#offer-dialog .section-heading .section-mark{display:none}
+#offer-dialog .section-heading h2{color:#111;font-size:16px;font-weight:700;line-height:1.5}
+#offer-dialog .section-heading .section-subtitle{font-size:12px;color:#888}
+#offer-dialog .fields{padding:14px 20px 9px;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(24px,5vw,96px);row-gap:10px}
+#offer-dialog .fields>.field{display:grid;grid-template-columns:clamp(122px,11vw,172px) minmax(0,340px);gap:5px 12px;align-items:center}
+#offer-dialog .field>label{min-height:0;color:#6b6b6b;font-size:14px;line-height:1.5;font-weight:600}
+#offer-dialog .fields>.field>label{text-align:right}
+#offer-dialog .fields>.field>.hint,#offer-dialog .fields>.field>.field-error{grid-column:2}
+#offer-dialog .field .hint{font-size:11px;color:#888}
+#offer-dialog .required{color:#777}
+#offer-dialog input:not([type=checkbox]):not([type=file]),#offer-dialog select,#offer-dialog textarea{height:34px;min-width:0;border:1px solid #bcbcbc;border-radius:3px;padding:6px 10px;background:linear-gradient(#f7f7f7,#fff 12px);box-shadow:inset 0 2px 5px #0000000c;color:#222;font-size:14px;line-height:1.4}
+#offer-dialog textarea{height:90px;resize:vertical}
+#offer-dialog input::placeholder,#offer-dialog textarea::placeholder{color:#999;opacity:1}
+#offer-dialog .field input[readonly],#offer-dialog .field input:disabled,#offer-dialog .field select:disabled,#offer-dialog .field textarea:disabled,#offer-dialog .field textarea[readonly]{background:#ededed;border-color:#d2d2d2;color:#777;box-shadow:none;opacity:1}
+#offer-dialog input:focus,#offer-dialog select:focus,#offer-dialog textarea:focus{border-color:#668fbc;outline:0;box-shadow:0 0 0 2px #7da7cf25}
+#offer-dialog .field.invalid input,#offer-dialog .field.invalid select{border-color:#cb4b43}
+#offer-dialog .field .control-wrap input{padding-right:36px}
+#offer-dialog .control-suffix{top:8px;color:#777;font-size:12px}
+#offer-dialog .check-label{color:#666;font-size:13px;line-height:1.5}
+#offer-dialog input[type=checkbox]{accent-color:#1677df;width:14px;height:14px}
+#offer-dialog .fields>.checks-row{padding:2px 0 0 clamp(134px,calc(11vw + 12px),184px)}
+#offer-dialog .field .check-label{padding:4px 0;text-align:left;font-weight:400}
+#offer-dialog .salary-with-cr{gap:8px}
+#offer-dialog .salary-cr{flex-basis:88px;gap:5px}
+#offer-dialog .salary-cr>label{font-size:12px;color:#777}
+#offer-dialog .salary-cr input{font-size:12px;padding:6px}
+#offer-dialog .headcount-grid{margin:12px 20px 0;background:#f4f4f4;border:1px solid #d4d4d4;border-radius:0}
+#offer-dialog .headcount-item{padding:7px 11px;min-height:34px;border-color:#d4d4d4}
+#offer-dialog .headcount-item span{font-size:12px;color:#777}
+#offer-dialog .headcount-item output{font-size:14px;color:#666}
+#offer-dialog .headcount-caption{color:#888;padding:6px 20px 0;font-size:11px}
+#offer-dialog .salary-submodule,#offer-dialog .signing-bonus-module{margin:12px 20px 16px;padding:15px 18px;border:1px solid #c9c9c9;border-radius:0;background:#fff}
+#offer-dialog .salary-subheading{margin-bottom:12px}
+#offer-dialog .salary-subheading h3{font-size:14px;color:#555;font-weight:600}
+#offer-dialog .signing-bonus-module h3{font-size:14px;color:#b15a06;margin-bottom:14px}
+#offer-dialog .monthly-rule-controls{gap:10px 16px}
+#offer-dialog .monthly-rule-controls .field>label{font-size:13px}
+#offer-dialog .bonus-rule{padding:11px 0;border-color:#ccc}
+#offer-dialog .bonus-rule-controls .field>label{font-size:13px}
+#offer-dialog .salary-breakdown{background:#f5f5f5;border-radius:0;color:#777}
+#offer-dialog .signing-toggle{margin-bottom:12px}
+#offer-dialog .signing-settings{gap:10px}
+#offer-dialog .signing-settings .field{grid-template-columns:125px minmax(0,260px)}
+#offer-dialog .signing-amount-row>.field{flex-basis:397px}
+#offer-dialog .signing-settings .field>label{font-size:13px;color:#666}
+#offer-dialog .equity-settings .equity-details .field{grid-template-columns:125px minmax(0,1fr)}
+#offer-dialog .equity-details textarea{height:90px}
+#offer-dialog .signing-table th,#offer-dialog .signing-table td{border-color:#d2d2d2;padding:10px 12px;font-size:13px}
+#offer-dialog .signing-table th{background:#ededed;color:#333}
+#offer-dialog .signing-table tfoot td{background:#f5f5f5}
+#offer-dialog .link-button{color:#3866f0}
+#offer-dialog .comparison-wrap{padding:12px 20px 20px}
+#offer-dialog .comparison-table th{background:#ededed;color:#333;font-size:13px;border-bottom:1px solid #bbb}
+#offer-dialog .comparison-table td{border-color:#d3d3d3;color:#666;font-size:13px;padding-top:9px;padding-bottom:9px}
+#offer-dialog .comparison-table .total-row td{background:#f5f5f5;color:#333}
+#offer-dialog .comparison-table input{height:32px}
+#offer-dialog .upload-intro{margin:12px 20px;padding:4px 0;background:none;color:#ad5b10;font-size:12px;border-radius:0}
+#offer-dialog .attachment-list{margin:0 20px 18px;border:1px solid #ccc}
+#offer-dialog .attachment-row{padding:10px 12px;border-color:#ccc}
+#offer-dialog .attachment-row:last-child{border-bottom:0}
+#offer-dialog .attachment-row:nth-child(even){background:#f7f7f7}
+#offer-dialog .attachment-type,#offer-dialog .file-info{font-size:12px;color:#666}
+#offer-dialog .button{min-height:32px;border:1px solid #aaa;border-radius:3px;background:linear-gradient(#fff,#dedede);box-shadow:0 1px 2px #0002;color:#333;font-size:13px;padding:7px 16px}
+#offer-dialog .button:hover{background:linear-gradient(#fff,#d2d2d2);border-color:#888}
+#offer-dialog .button.primary{color:#222;font-weight:600}
+#offer-dialog .offer-modal-footer{border-top:1px solid #c6c6c6;background:#f5f5f5}
+#offer-dialog .form-footer{padding:12px 30px;background:#f5f5f5}
+#offer-dialog .save-state{color:#888;font-size:12px}
+@media(max-width:1100px){
+  #offer-dialog .fields{column-gap:24px;padding-left:6px;padding-right:6px}
+  #offer-dialog .fields>.field{grid-template-columns:122px minmax(0,1fr);column-gap:10px}
+  #offer-dialog .salary-submodule,#offer-dialog .signing-bonus-module{margin-left:6px;margin-right:6px}
+  #offer-dialog .salary-with-cr{flex-wrap:wrap;gap:5px}
+  #offer-dialog .salary-with-cr>.control-wrap{flex-basis:100%}
+  #offer-dialog .salary-cr{flex-basis:88px;margin-left:auto}
+  #offer-dialog .bonus-rule-controls .field{display:flex;align-items:stretch}
+}
+@media(max-width:720px){
+  #offer-dialog{width:calc(100vw - 16px);height:calc(100dvh - 16px)}
+  #offer-dialog .offer-modal-header h1{font-size:21px;padding:14px 48px}
+  #offer-dialog .offer-modal-close{right:8px;top:10px}
+  #offer-dialog .offer-modal-header p{font-size:12px;padding:12px 16px 6px}
+  #offer-dialog .heading-actions{margin:6px 12px 0 0}
+  #offer-dialog .offer-modal-body{padding:6px 12px 18px}
+  #offer-dialog .fields{grid-template-columns:1fr;padding:12px 2px 8px;row-gap:10px}
+  #offer-dialog .fields>.field{grid-template-columns:112px minmax(0,1fr);gap:5px 8px}
+  #offer-dialog .field>label{font-size:12px}
+  #offer-dialog input:not([type=checkbox]):not([type=file]),#offer-dialog select,#offer-dialog textarea{font-size:13px}
+  #offer-dialog .fields>.checks-row{padding-left:120px;gap:10px}
+  #offer-dialog .checks-row .check-label{font-size:11px}
+  #offer-dialog .section-heading{padding:7px 2px 8px}
+  #offer-dialog .section-heading h2{font-size:15px}
+  #offer-dialog .section-heading .section-subtitle{font-size:10px}
+  #offer-dialog .headcount-grid{margin:10px 2px 0;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #offer-dialog .headcount-item{padding:7px;font-size:11px}
+  #offer-dialog .headcount-item span{font-size:11px}
+  #offer-dialog .headcount-caption{padding:6px 2px 0}
+  #offer-dialog .salary-submodule,#offer-dialog .signing-bonus-module{margin:10px 2px 14px;padding:12px 10px}
+  #offer-dialog .monthly-rule-controls,#offer-dialog .bonus-rule-controls{grid-template-columns:1fr}
+  #offer-dialog .signing-settings .field,#offer-dialog .equity-settings .equity-details .field{display:flex;align-items:stretch}
+  #offer-dialog .signing-settings .field>label{text-align:left}
+  #offer-dialog .signing-amount-row>.field{flex-basis:100%}
+  #offer-dialog .signing-table th,#offer-dialog .signing-table td{padding:9px 5px;font-size:11px}
+  #offer-dialog .comparison-wrap{padding:12px 2px 18px}
+  #offer-dialog .upload-intro{margin:10px 2px;font-size:11px}
+  #offer-dialog .attachment-list{margin:0 2px 14px}
+  #offer-dialog .attachment-row{padding:10px 8px}
+  #offer-dialog .attachment-actions{gap:4px}
+  #offer-dialog .attachment-actions .button{font-size:11px;padding:5px 8px}
+  #offer-dialog .form-footer{padding:10px 12px}
+  #offer-dialog .form-footer .button{font-size:12px;min-width:60px;padding:7px 10px}
+  #offer-dialog .save-state{font-size:11px}
+}
