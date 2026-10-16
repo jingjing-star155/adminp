@@ -97,8 +97,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
   function render() {
     loadError = false;
     employees = loadEmployees();
-    pageShell('薪酬结构管理', 'payroll-projects-page', '<button type="button" class="button" id="preview-payroll-history">查看变更示例</button>', filter, '搜索工号、姓名、部门或职位', []);
-    $('#preview-payroll-history').addEventListener('click', () => openHistory(withDemoHistory(seed.find(row => row.employeeNo === '810003')), null, '#preview-payroll-history'));
+    pageShell('薪酬结构管理', 'payroll-projects-page', '', filter, '搜索工号、姓名、部门或职位', []);
     bindFilters(filter, renderRows);
     renderRows();
     if (loadError) toast('员工发薪信息未能读取，请刷新后重试。', true);
@@ -158,7 +157,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     const current = { ...emptySettings(), ...after };
     return changeFields.map(([key, label, type]) => ({ key, label, before: changeValue(previous, key, type), after: changeValue(current, key, type) })).filter(change => change.before !== change.after);
   }
-  function openHistory(employee, selectedSequence = null, historyReturnFocus = null) {
+  function openHistory(employee, selectedSequence = null) {
     if (!employee) return;
     const history = (employee.history || []).map((record, index) => ({ record, sequence: index + 1 }))
       .sort((a, b) => String(b.record.changedAt || '').localeCompare(String(a.record.changedAt || '')) || b.sequence - a.sequence);
@@ -168,19 +167,19 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
       const legacySigning = legacySigningBonus(record.after || {});
       const changes = Array.isArray(record.changes) ? record.changes : [];
       openEditor({ ...employee, compensation: hasSnapshot ? record.after : emptySettings() }, false, {
-        title: '薪酬变更记录', returnFocus: historyReturnFocus || `[data-employee-history="${employee.id}"]`, focusTarget: '#employee-history-date',
+        title: '薪酬变更记录', returnFocus: `[data-employee-history="${employee.id}"]`, focusTarget: '#employee-history-date',
         historySnapshot: true, hideCompensation: !hasSnapshot,
         signingSnapshot: Object.hasOwn(record, 'signingBonus') ? record.signingBonus : legacySigning,
         signingHistoryKnown: Object.hasOwn(record, 'signingBonus') || legacySigning.enabled,
         headerHTML: `<section class="employee-history-filter" aria-label="变更日期选择"><div class="field"><label for="employee-history-date">变更日期</label><select id="employee-history-date">${history.map(entry => `<option value="${entry.sequence}" ${entry.sequence === sequence ? 'selected' : ''}>${esc(entry.record.changedAt || '日期未记录')}（第 ${entry.sequence} 次变更）${entry.record.demo === true ? ' · 示例' : ''}</option>`).join('')}</select></div><p class="employee-history-count">共 ${history.length} 条变更记录${history.some(entry => entry.record.demo === true) ? '（含示例）' : ''}</p></section><p class="employee-history-heading">${hasSnapshot ? '变更后的完整薪酬信息' : '该次变更未保存完整薪酬信息。'}</p>`,
         footerHTML: `<details class="employee-history-record" open><summary><strong>第 ${sequence} 次变更</strong><time>${esc(record.changedAt || '日期未记录')}</time><span>${changes.length} 项变化</span></summary><div class="employee-history-scroll"><table class="employee-history-table"><thead><tr><th scope="col">变更项目</th><th scope="col">变更前</th><th scope="col">变更后</th></tr></thead><tbody>${changes.map(change => `<tr><th scope="row">${esc(change.label)}</th><td>${esc(change.before)}</td><td>${esc(change.after)}</td></tr>`).join('')}</tbody></table></div></details>`,
-        onOpen: () => $('#employee-history-date').addEventListener('change', event => openHistory(employee, Number(event.target.value), historyReturnFocus))
+        onOpen: () => $('#employee-history-date').addEventListener('change', event => openHistory(employee, Number(event.target.value)))
       });
       return;
     }
     editorOptions = {};
     editing = employee; draft = null; dirty = false; viewOnly = true;
-    returnFocus = historyReturnFocus || `[data-employee-history="${employee.id}"]`;
+    returnFocus = `[data-employee-history="${employee.id}"]`;
     $('#employee-payroll-title').textContent = '薪酬变更记录';
     $('.dialog-heading [data-close-employee-payroll]', form).setAttribute('aria-label', '关闭薪酬变更记录');
     $('#save-employee-payroll').hidden = true;

@@ -214,7 +214,7 @@ html.offer-modal-open,html.offer-modal-open body{overflow:hidden}
 .payroll-remarks{display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .payroll-status{display:inline-block;font-size:12px;color:#738093}
 .payroll-status.enabled{color:#27916e}.payroll-status.incomplete{color:#c88631}
-.signing-ledger-table{min-width:1120px}
+.signing-ledger-table{min-width:940px}
 .payroll-table .ledger-detail-row>td{padding:0 22px 18px;background:#fafbfc}
 .ledger-detail-row[hidden]{display:none}
 .ledger-schedule{white-space:normal;padding:18px 20px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:16px}
