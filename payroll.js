@@ -1,6 +1,6 @@
 /* Payroll pages share the existing shell and locally saved Offer records. */
 'use strict';
-window.createPayrollManagement = ({ app, escapeHTML: esc, icon, money, stamp, toast, openDialog, navigate, getOffers, statuses, signingPayments }) => {
+window.createPayrollManagement = ({ app, escapeHTML: esc, icon, money, stamp, toast, openDialog, getOffers, statuses, signingPayments }) => {
   const $ = (selector, root = app) => root.querySelector(selector);
   const $$ = (selector, root = app) => [...root.querySelectorAll(selector)];
   const agreementURL = 'https://docs.oa.wanmei.net/weboffice/l/sd17qyPSFI2rJ';
@@ -96,7 +96,7 @@ window.createPayrollManagement = ({ app, escapeHTML: esc, icon, money, stamp, to
     $('#payroll-results').innerHTML = `<div class="table-scroll"><table class="payroll-table signing-ledger-table"><thead><tr>${['流程号', '姓名', '直属部门', '计划入职时间', '签约金总金额', '发放期数', '操作'].map(label => `<th scope="col">${label}</th>`).join('')}</tr></thead><tbody>${slice.map(record => {
       const plan = signingPlan(record);
       const expanded = expandedOffer === record.id;
-      return `<tr class="ledger-record"><td>${esc(record.processNo)}</td><td>${esc(record.name || '未填写')}</td><td>${esc(record.department || '—')}</td><td>${esc(record.startDate || '—')}</td><td>${plan.validAmount ? money(record.signingBonus) : '待填写'}</td><td>${plan.count ? `${plan.count} 期` : '待填写'}</td><td><div class="payroll-row-actions"><button class="link-button" data-ledger-expand="${esc(record.id)}" aria-expanded="${expanded}" aria-controls="schedule-${esc(record.id)}">${expanded ? '收起明细' : '发放明细'}</button><button class="link-button" data-offer-record="${esc(record.id)}">查看签约金协议</button></div></td></tr>
+      return `<tr class="ledger-record"><td>${esc(record.processNo)}</td><td>${esc(record.name || '未填写')}</td><td>${esc(record.department || '—')}</td><td>${esc(record.startDate || '—')}</td><td>${plan.validAmount ? money(record.signingBonus) : '待填写'}</td><td>${plan.count ? `${plan.count} 期` : '待填写'}</td><td><div class="payroll-row-actions"><button class="link-button" data-ledger-expand="${esc(record.id)}" aria-expanded="${expanded}" aria-controls="schedule-${esc(record.id)}">${expanded ? '收起明细' : '发放明细'}</button><a class="link-button" href="./signing-bonus-agreement-example.html" target="_blank" rel="noopener noreferrer">查看签约金协议</a></div></td></tr>
         <tr id="schedule-${esc(record.id)}" class="ledger-detail-row" ${expanded ? '' : 'hidden'}><td colspan="7">${scheduleDetail(record, plan)}</td></tr>`;
     }).join('')}</tbody></table></div>${slice.length ? '' : emptyState('暂无签约金记录', ledgerFilter.search || ledgerFilter.status ? '请调整搜索条件或审批状态。' : '在 Offer 表单勾选「是否有签约金」并保存后，可在此查看发放计划。')}${pagination(rows.length, pages, ledgerFilter)}`;
     $$('[data-ledger-expand]').forEach(button => button.addEventListener('click', () => {
@@ -105,7 +105,7 @@ window.createPayrollManagement = ({ app, escapeHTML: esc, icon, money, stamp, to
       renderLedgerRows();
       $$('[data-ledger-expand]').find(item => item.dataset.ledgerExpand === id)?.focus({ preventScroll: true });
     }));
-    $$('[data-offer-record]').forEach(button => button.addEventListener('click', () => navigate(`#/offers/${encodeURIComponent(button.dataset.offerRecord)}`)));
+
     bindPagination(ledgerFilter, renderLedgerRows);
   }
   function scheduleDetail(record, plan) {
