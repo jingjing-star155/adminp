@@ -275,7 +275,8 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
 #employee-payroll-body{overflow:auto;flex:1;min-height:0;padding:20px 24px;background:#f6f7fa;scroll-padding:20px}
 .employee-identity{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 24px;margin:0 0 20px;padding:16px 20px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .employee-identity dt{font-size:11px;color:#8993a2;margin-bottom:7px}.employee-identity dd{margin:0;font-size:13px;color:#354255;overflow-wrap:anywhere}
-.employee-pay-section{padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:16px}
+.employee-pay-section,.employee-change-metadata{padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:16px}
+.employee-change-metadata .field{max-width:300px}
 .employee-pay-section:last-child{margin-bottom:0}
 .employee-pay-section h3{font-size:14px;font-weight:600;color:#354255;margin:0 0 16px}
 .employee-readonly-badge{display:inline-block;font-size:11px;font-weight:400;color:#788496;background:#f3f5f8;border-radius:4px;padding:4px 8px;margin-left:8px;vertical-align:middle}
@@ -306,8 +307,7 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
 .employee-payment-table tfoot{background:#fafbfc}.employee-payment-table output{font-variant-numeric:tabular-nums}
 .employee-policy-info{font-size:12px;color:#68768b;padding:10px 0}
 .employee-policy-notice{font-size:12px;line-height:1.8;padding:10px 12px;background:#fff9ef;color:#a9742b;border-radius:5px;margin-top:16px}
-.employee-long-term-fields{max-width:350px}
-.employee-long-term-fields .employee-control input{padding-right:100px}
+.employee-long-term-fields input{width:100%;min-width:0}
 @media(max-width:1050px){
   .employee-monthly-row{grid-template-columns:repeat(3,minmax(0,1fr))}
   .employee-bonus-row .field{display:flex;align-items:stretch}

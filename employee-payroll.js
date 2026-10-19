@@ -59,6 +59,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
   let draft = null;
   let dirty = false;
   let returnFocus = null;
+  let effectiveDate = '';
 
   function withDemoHistory(row) {
     const sample = seed.find(item => item.id === row.id && item.employeeNo === row.employeeNo && item.name === row.name);
@@ -75,11 +76,11 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
         annualEnabled: 'yes', annualMode: 'months', annualMonths: index === 0 ? '1' : '2',
         longTermEnabled: true, longTermShares: plan.shares[index]
       };
-      const record = { id: `demo-history-${row.employeeNo}-${index + 1}`, demo: true, changedAt, before: structuredClone(previous), after: structuredClone(after), changes: compensationChanges(previous, after), signingBonus: structuredClone(plan.signingBonus) };
+      const record = { id: `demo-history-${row.employeeNo}-${index + 1}`, demo: true, changedAt, effectiveDate: changedAt.slice(0, 10), before: structuredClone(previous), after: structuredClone(after), changes: compensationChanges(previous, after), signingBonus: structuredClone(plan.signingBonus) };
       previous = after;
       return record;
     });
-    return { ...row, compensation: structuredClone(previous), updatedAt: dates[dates.length - 1], history };
+    return { ...row, compensation: structuredClone(previous), updatedAt: dates[dates.length - 1], effectiveDate: history[history.length - 1].effectiveDate, history };
   }
   function loadEmployees() {
     try {
@@ -106,9 +107,9 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     const query = filter.search.trim().toLowerCase();
     const rows = employees.filter(row => !query || [row.employeeNo, row.name, row.department, row.job].some(value => value.toLowerCase().includes(query)));
     const { slice, pages } = paginate(rows, filter);
-    $('#payroll-results', app).innerHTML = `<div class="table-scroll"><table class="payroll-table employee-payroll-table"><colgroup><col class="employee-number-col"><col class="employee-name-col"><col class="employee-department-col"><col class="employee-job-col">${payItems.map(() => '<col class="employee-item-col">').join('')}<col class="employee-updated-col"><col class="employee-actions-col"></colgroup><thead><tr>${['工号', '姓名', '部门', '职位', ...payItems.map(([, label]) => label), '更新时间', '操作'].map(label => `<th scope="col">${label}</th>`).join('')}</tr></thead><tbody>${slice.map(row => `<tr><td>${esc(row.employeeNo)}</td><td>${esc(row.name)}</td><td>${esc(row.department)}</td><td>${esc(row.job)}</td>${paySummary(row.compensation, row).map(value => `<td class="employee-pay-summary">${esc(value)}</td>`).join('')}<td>${esc(row.updatedAt?.slice(0, 16) || '—')}</td><td><div class="payroll-row-actions"><button class="link-button" data-employee-edit="${esc(row.id)}">编辑</button><button class="link-button" data-employee-view="${esc(row.id)}">查看</button><button class="link-button" data-employee-history="${esc(row.id)}">变更记录${row.history?.length ? `（${row.history.length}）` : ''}</button></div></td></tr>`).join('')}</tbody></table></div>${slice.length ? '' : emptyState('暂无符合条件的员工', '请调整搜索条件。')}${pagination(rows.length, pages, filter)}`;
-    $$('[data-employee-edit]', app).forEach(button => button.addEventListener('click', () => openEditor(employees.find(row => row.id === button.dataset.employeeEdit), true)));
-    $$('[data-employee-view]', app).forEach(button => button.addEventListener('click', () => openEditor(employees.find(row => row.id === button.dataset.employeeView))));
+    $('#payroll-results', app).innerHTML = `<div class="table-scroll"><table class="payroll-table employee-payroll-table"><colgroup><col class="employee-number-col"><col class="employee-name-col"><col class="employee-department-col"><col class="employee-job-col">${payItems.map(() => '<col class="employee-item-col">').join('')}<col class="employee-updated-col"><col class="employee-actions-col"></colgroup><thead><tr>${['工号', '姓名', '部门', '职位', ...payItems.map(([, label]) => label), '更新时间', '操作'].map(label => `<th scope="col">${label}</th>`).join('')}</tr></thead><tbody>${slice.map(row => `<tr><td>${esc(row.employeeNo)}</td><td>${esc(row.name)}</td><td>${esc(row.department)}</td><td>${esc(row.job)}</td>${paySummary(row.compensation, row).map(value => `<td class="employee-pay-summary">${esc(value)}</td>`).join('')}<td>${esc(row.updatedAt?.slice(0, 16) || '—')}</td><td><div class="payroll-row-actions"><button class="link-button" data-employee-view="${esc(row.id)}">查看</button><button class="link-button" data-employee-edit="${esc(row.id)}">新增变更</button><button class="link-button" data-employee-history="${esc(row.id)}">变更记录${row.history?.length ? `（${row.history.length}）` : ''}</button></div></td></tr>`).join('')}</tbody></table></div>${slice.length ? '' : emptyState('暂无符合条件的员工', '请调整搜索条件。')}${pagination(rows.length, pages, filter)}`;
+    $$('[data-employee-edit]', app).forEach(button => button.addEventListener('click', () => openEditor(employees.find(row => row.id === button.dataset.employeeEdit), true, { showEffectiveDate: true, focusTarget: '#ep-effectiveDate' })));
+    $$('[data-employee-view]', app).forEach(button => button.addEventListener('click', () => openEditor(employees.find(row => row.id === button.dataset.employeeView), false, { showEffectiveDate: true })));
     $$('[data-employee-history]', app).forEach(button => button.addEventListener('click', () => openHistory(employees.find(row => row.id === button.dataset.employeeHistory))));
     bindPagination(filter, renderRows);
   }
@@ -119,7 +120,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     const c = { ...emptySettings(), ...compensation };
     const bonuses = bonusTypes.filter(([key]) => c[`${key}Enabled`] === 'yes').map(([, label]) => label);
     const signing = employee ? getSigningBonus(employee) : legacySigningBonus(c);
-    return [c.monthlySalary === '' ? '—' : money(c.monthlySalary), bonuses.join('、') || '无', signing.enabled ? money(signing.total) : '无', c.longTermEnabled ? `${c.longTermShares} ADS / 四年` : '无'];
+    return [c.monthlySalary === '' ? '—' : money(c.monthlySalary), bonuses.join('、') || '无', signing.enabled ? money(signing.total) : '无', c.longTermEnabled ? String(c.longTermShares || '—') : '无'];
   }
   function legacySigningBonus(compensation = {}) {
     const enabled = compensation.signingEnabled === true || compensation.signingEnabled === 'yes' || (compensation.signingEnabled == null && Number(compensation.signingTotal) > 0);
@@ -142,7 +143,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     ['monthlySalary', '月薪', 'money'], ['monthlySplit', '月薪是否拆分', 'choice'], ['monthlySplitMode', '拆分方式', 'choice'],
     ['fixedRatio', '固定工资比例', '%'], ['performanceRatio', '绩效工资比例', '%'], ['fixedAmount', '固定工资金额', 'money'], ['performanceAmount', '绩效工资金额', 'money'],
     ...bonusTypes.flatMap(([key, label]) => [[`${key}Enabled`, `是否有${label}`, 'choice'], [`${key}Mode`, `${label}目标填写方式`, 'choice'], [`${key}Amount`, `${label}目标金额`, 'money'], [`${key}Months`, `${label}目标月数`, '个月']]),
-    ['longTermEnabled', '是否有长期激励', 'choice'], ['longTermShares', '长期激励目标股数', 'ADS / 四年']
+    ['longTermEnabled', '是否有长期激励', 'choice'], ['longTermShares', '期权内容', 'text']
   ];
   function changeValue(c, key, type) {
     const value = c[key];
@@ -150,6 +151,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     if (value === '' || value == null) return '—';
     if (type === 'choice') return ({ yes: '是', no: '否', true: '是', false: '否', ratio: '按比例拆分', amount: key === 'monthlySplitMode' ? '按金额拆分' : '目标金额', months: '目标月数' })[value] || String(value);
     if (type === 'money') return money(value);
+    if (type === 'text') return String(value);
     return `${Number(value)} ${type}`;
   }
   function compensationChanges(before, after) {
@@ -168,7 +170,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
       const changes = Array.isArray(record.changes) ? record.changes : [];
       openEditor({ ...employee, compensation: hasSnapshot ? record.after : emptySettings() }, false, {
         title: '薪酬变更记录', returnFocus: `[data-employee-history="${employee.id}"]`, focusTarget: '#employee-history-date',
-        historySnapshot: true, hideCompensation: !hasSnapshot,
+        historySnapshot: true, hideCompensation: !hasSnapshot, showEffectiveDate: true, effectiveDate: record.effectiveDate || '',
         signingSnapshot: Object.hasOwn(record, 'signingBonus') ? record.signingBonus : legacySigning,
         signingHistoryKnown: Object.hasOwn(record, 'signingBonus') || legacySigning.enabled,
         headerHTML: `<section class="employee-history-filter" aria-label="变更日期选择"><div class="field"><label for="employee-history-date">变更日期</label><select id="employee-history-date">${history.map(entry => `<option value="${entry.sequence}" ${entry.sequence === sequence ? 'selected' : ''}>${esc(entry.record.changedAt || '日期未记录')}（第 ${entry.sequence} 次变更）${entry.record.demo === true ? ' · 示例' : ''}</option>`).join('')}</select></div><p class="employee-history-count">共 ${history.length} 条变更记录${history.some(entry => entry.record.demo === true) ? '（含示例）' : ''}</p></section><p class="employee-history-heading">${hasSnapshot ? '变更后的完整薪酬信息' : '该次变更未保存完整薪酬信息。'}</p>`,
@@ -205,14 +207,16 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     viewOnly = !canEdit;
     returnFocus = options.returnFocus || (canEdit ? `[data-employee-edit="${employee.id}"]` : `[data-employee-view="${employee.id}"]`);
     draft = { ...emptySettings(), ...structuredClone(employee.compensation) };
+    effectiveDate = canEdit ? stamp().slice(0, 10) : options.effectiveDate ?? employee.effectiveDate ?? '';
     dirty = false;
-    $('#employee-payroll-title').textContent = options.title || (viewOnly ? '查看发薪项目' : '修改薪酬信息');
-    $('.dialog-heading [data-close-employee-payroll]', form).setAttribute('aria-label', options.title ? `关闭${options.title}` : '关闭发薪项目编辑');
+    $('#employee-payroll-title').textContent = options.title || (viewOnly ? '查看发薪项目' : '新增变更');
+    $('.dialog-heading [data-close-employee-payroll]', form).setAttribute('aria-label', `关闭${$('#employee-payroll-title').textContent}`);
     $('#save-employee-payroll').textContent = options.saveLabel || '保存';
     $('#save-employee-payroll').hidden = viewOnly;
     $('#save-employee-payroll').disabled = viewOnly;
     $('.dialog-footer [data-close-employee-payroll]', form).textContent = viewOnly ? '关闭' : '取消';
     body.innerHTML = `${options.headerHTML || ''}<dl class="employee-identity" ${options.noEmployee ? 'hidden' : ''}>${[['工号', employee.employeeNo], ['姓名', employee.name], ['部门', employee.department], ['职位', employee.job]].map(([label, value]) => `<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
+      ${options.showEffectiveDate ? `<section class="employee-change-metadata" aria-label="变更信息"><div class="field"><label for="ep-effectiveDate">${viewOnly ? '' : '<span class="required">*</span>'}生效时间</label><input id="ep-effectiveDate" type="date" required value="${esc(effectiveDate)}" ${viewOnly ? 'disabled' : ''}>${viewOnly && !effectiveDate ? '<span class="employee-signing-note">未记录</span>' : ''}</div></section>` : ''}
       <div id="employee-payroll-error" class="form-error-summary" role="alert" hidden></div>
       <section class="employee-pay-section" data-pay-section="monthly" aria-labelledby="ep-monthly-title"><h3 id="ep-monthly-title">月薪</h3>
         <div class="employee-monthly-row">${numeric('monthlySalary', '月薪', '元', { min: 0.01 })}${select('monthlySplit', '月薪是否拆分', yesNo)}<fieldset id="ep-split-details" class="employee-fields-inline">${select('monthlySplitMode', '拆分方式', [['ratio', '按比例拆分'], ['amount', '按金额拆分']])}<fieldset id="ep-split-ratio" class="employee-fields-inline">${numeric('fixedRatio', '固定工资比例', '%', { max: 100 })}${numeric('performanceRatio', '绩效工资比例', '%', { max: 100 })}</fieldset><fieldset id="ep-split-amount" class="employee-fields-inline">${numeric('fixedAmount', '固定工资金额', '元')}${numeric('performanceAmount', '绩效工资金额', '元')}</fieldset></fieldset></div>
@@ -220,7 +224,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
       </section>
       <section class="employee-pay-section" data-pay-section="bonus" aria-labelledby="ep-bonus-title"><h3 id="ep-bonus-title">绩效与奖金目标</h3>${bonusTypes.map(([key, label]) => `<div class="employee-bonus-row">${select(`${key}Enabled`, `是否有${label}`, yesNo)}<fieldset class="employee-fields-inline" id="ep-${key}-details">${select(`${key}Mode`, '目标填写方式', [['amount', '目标金额'], ['months', '目标月数']])}<fieldset class="employee-fields-inline" id="ep-${key}-amount">${numeric(`${key}Amount`, '目标金额', '元', { min: 0.01 })}</fieldset><fieldset class="employee-fields-inline" id="ep-${key}-months">${numeric(`${key}Months`, '目标月数', '个月', { min: 0.01, max: 120 })}</fieldset></fieldset></div>`).join('')}</section>
       ${signingBonusSection(employee, options)}
-      <section class="employee-pay-section" data-pay-section="long-term" aria-labelledby="ep-long-term-title"><h3 id="ep-long-term-title">长期激励</h3>${check('longTermEnabled', '是否有长期激励')}<fieldset id="ep-long-term-details" class="employee-conditional employee-long-term-fields">${numeric('longTermShares', '目标股数', 'ADS / 四年', { min: 1, step: '1' })}</fieldset></section>${options.footerHTML || ''}`;
+      <section class="employee-pay-section" data-pay-section="long-term" aria-labelledby="ep-long-term-title"><h3 id="ep-long-term-title">长期激励</h3>${check('longTermEnabled', '是否有长期激励')}<fieldset id="ep-long-term-details" class="employee-conditional employee-long-term-fields"><div class="field"><label for="ep-longTermShares"><span class="required">*</span>期权内容</label><input id="ep-longTermShares" name="longTermShares" type="text" required value="${esc(draft.longTermShares)}" placeholder="请输入期权内容"></div></fieldset></section>${options.footerHTML || ''}`;
     $('#ep-monthlySalary').readOnly = viewOnly || !options.monthlyEditable;
     $$('.employee-pay-section', body).forEach(section => {
       section.hidden = !!options.noEmployee || !!options.hideCompensation;
@@ -234,6 +238,12 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
       $('#employee-payroll-error').hidden = true;
       syncFields(control.name);
     }));
+    $('#ep-effectiveDate', body)?.addEventListener('input', event => {
+      if (viewOnly) return;
+      effectiveDate = event.target.value;
+      dirty = true;
+      $('#employee-payroll-error').hidden = true;
+    });
     syncFields('open');
     options.onOpen?.();
     dialog.showModal();
@@ -281,6 +291,7 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     return '';
   }
   function validationIssue() {
+    if (draft.longTermEnabled && !String(draft.longTermShares ?? '').trim()) return { message: '请填写期权内容。', target: '#ep-longTermShares' };
     const split = splitIssue();
     if (split) return { message: split, target: draft.monthlySplit === 'yes' ? '#ep-monthlySplit' : '#ep-monthlySalary' };
     return null;
@@ -300,14 +311,14 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     const changes = compensationChanges(editing.compensation, compensation);
     if (!changes.length) { closeEditor(); toast('薪酬未发生变化'); return; }
     const changedAt = stamp();
-    const record = { id: crypto.randomUUID(), changedAt, before: structuredClone(editing.compensation), after: structuredClone(compensation), changes, signingBonus: getSigningBonus(editing) };
+    const record = { id: crypto.randomUUID(), changedAt, effectiveDate, before: structuredClone(editing.compensation), after: structuredClone(compensation), changes, signingBonus: getSigningBonus(editing) };
     const latest = loadEmployees();
     if (loadError) { toast('读取最新薪酬信息失败，请刷新后重试。', true); return; }
     const current = latest.find(row => row.id === editing.id);
     if (!current || JSON.stringify(current.compensation) !== JSON.stringify(editing.compensation) || JSON.stringify(current.history || []) !== JSON.stringify(editing.history || [])) {
       toast('该员工薪酬已在其他页面更新，请刷新后重新编辑。', true); return;
     }
-    const next = latest.map(row => row.id === editing.id ? { ...row, compensation, updatedAt: changedAt, history: [...(row.history || []), record] } : row);
+    const next = latest.map(row => row.id === editing.id ? { ...row, compensation, effectiveDate, updatedAt: changedAt, history: [...(row.history || []), record] } : row);
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { toast('保存失败，请检查浏览器本地存储后重试。', true); return; }
     employees = next; dirty = false; renderRows(); closeEditor(); toast('薪酬已更新，已生成一条变更记录');
   }
