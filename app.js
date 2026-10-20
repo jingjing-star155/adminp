@@ -5,6 +5,9 @@
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const storageKey = 'hongen-offer-records-v1';
+  // Paused until the user provides detailed job maintenance requirements.
+  const jobDataEnabled = false;
+  const defaultJobNames = ['产品经理','前端开发工程师','后端开发工程师','测试工程师','视觉设计师','课程教研专家','品牌营销经理','内容策划','招聘专员','财务分析师'];
   const statuses = {unsaved:'未保存',draft:'已保存',pending:'审批中',approved:'已完成',rejected:'已退回',closed:'已关闭'};
   const sectionNames = ['候选人基本信息','组织架构信息','编制与招聘信息','职务信息','薪资信息','薪资对比','入职附件'];
   const icons = {
@@ -310,7 +313,7 @@
     const attachments=`<div class="upload-intro">${icon('info')}<span>每个文件不大于 2MB，支持 PDF、Word（.doc / .docx）和 Excel 97–2003（.xls）。Excel 请另存为对应格式，不要仅修改后缀名。提交前请上传个人简历和薪资证明。</span></div><div class="attachment-list">${fileTypes.map(({key,label,required})=>`<div class="attachment-row" data-file-row="${key}"><div class="attachment-type">${icon('files')}<span>${required?'<span class="required">*</span>':''}${label}</span></div><div class="file-info" id="file-info-${key}">未上传附件</div><div class="attachment-actions"><input class="file-input" type="file" id="file-${key}" data-upload="${key}" accept=".pdf,.doc,.docx,.xls" aria-label="上传${label}"><button type="button" class="button" data-upload-button="${key}">${icon('upload')}上传文件</button><button type="button" class="icon-button" data-download="${key}" aria-label="下载${label}" hidden>${icon('download')}</button><button type="button" class="icon-button" data-remove-file="${key}" aria-label="删除${label}" hidden>${icon('trash')}</button></div></div>`).join('')}</div>`;
     $('#offer-modal-header').replaceChildren();$('#offer-modal-footer').replaceChildren();
     formHost.innerHTML=`<div class="page-heading form-heading"><div class="heading-left"><div><h1 id="offer-dialog-title">${title}</h1><p>流程编号：${escapeHTML(record.processNo)}<span style="margin:0 10px;color:#d9dde4">|</span>审批状态：${badge(editing?record.status:'unsaved')}</p></div></div><div class="heading-actions">${detail && ['draft','rejected'].includes(record.status)?'<button class="button primary" id="edit-detail">编辑表单</button>':''}</div><button type="button" class="icon-button offer-modal-close" data-back aria-label="关闭Offer弹窗">${icon('x')}</button></div>
-      <div class="form-layout"><div class="form-stack">${record.rejectReason?`<div class="detail-banner"><span>退回原因：${escapeHTML(record.rejectReason)}</span></div>`:record.closeReason?`<div class="detail-banner"><span>关闭原因：${escapeHTML(record.closeReason)}</span></div>`:''}${detail?`<div class="detail-banner"><span>${record.status==='pending'?'当前流程等待审批，操作人：'+escapeHTML(record.operator):'正在查看已保存的流程信息。'}${record.demo?' 该记录为示例数据。':''}</span></div>`:''}<div id="form-errors" role="alert" class="form-error-summary" hidden></div><form id="offer-form" class="${detail?'detail-mode':''}" novalidate>${section('basic',sectionNames[0],basic,'录用信息')}${section('organization',sectionNames[1],org)}${section('headcount',sectionNames[2],headcount)}${section('position',sectionNames[3],position)}${section('salary',sectionNames[4],salary,'人民币 · CNY')}${section('comparison',sectionNames[5],comparison,'自动计算')}${section('attachments',sectionNames[6],attachments)}<datalist id="jobs">${payrollManagement.jobOptions().map(job=>`<option value="${escapeHTML(job.name)}">`).join('')}</datalist></form><div class="form-footer"><span class="save-state" id="save-state">${icon('save')}${detail?'最后更新：'+escapeHTML(record.updatedAt||'—'):'填写后可保存草稿，稍后继续'}</span><div class="actions"><button class="button" data-back>${detail?'返回列表':'取消'}</button>${detail?'':'<button class="button" id="save-draft">保存草稿</button><button class="button primary" id="submit-offer">提交Offer</button>'}</div></div></div></div>`;
+      <div class="form-layout"><div class="form-stack">${record.rejectReason?`<div class="detail-banner"><span>退回原因：${escapeHTML(record.rejectReason)}</span></div>`:record.closeReason?`<div class="detail-banner"><span>关闭原因：${escapeHTML(record.closeReason)}</span></div>`:''}${detail?`<div class="detail-banner"><span>${record.status==='pending'?'当前流程等待审批，操作人：'+escapeHTML(record.operator):'正在查看已保存的流程信息。'}${record.demo?' 该记录为示例数据。':''}</span></div>`:''}<div id="form-errors" role="alert" class="form-error-summary" hidden></div><form id="offer-form" class="${detail?'detail-mode':''}" novalidate>${section('basic',sectionNames[0],basic,'录用信息')}${section('organization',sectionNames[1],org)}${section('headcount',sectionNames[2],headcount)}${section('position',sectionNames[3],position)}${section('salary',sectionNames[4],salary,'人民币 · CNY')}${section('comparison',sectionNames[5],comparison,'自动计算')}${section('attachments',sectionNames[6],attachments)}<datalist id="jobs">${(jobDataEnabled?payrollManagement.jobOptions().map(job=>job.name):defaultJobNames).map(job=>`<option value="${escapeHTML(job)}">`).join('')}</datalist></form><div class="form-footer"><span class="save-state" id="save-state">${icon('save')}${detail?'最后更新：'+escapeHTML(record.updatedAt||'—'):'填写后可保存草稿，稍后继续'}</span><div class="actions"><button class="button" data-back>${detail?'返回列表':'取消'}</button>${detail?'':'<button class="button" id="save-draft">保存草稿</button><button class="button primary" id="submit-offer">提交Offer</button>'}</div></div></div></div>`;
     $('#offer-modal-header').append($('.form-heading',formHost));
     $('#offer-modal-footer').append($('.form-footer',formHost));
     bindForm();updateHeadcount();calculate();fileTypes.forEach(t=>renderAttachment(t.key));
@@ -494,6 +497,7 @@
       calculate();
     });
     $('#f-job').addEventListener('change',()=>{
+      if(!jobDataEnabled)return;
       const job=payrollManagement.jobOptions().find(item=>item.name===$('#f-job').value.trim());
       const hint=$('#job-salary-source');
       if(!job||job.fixedSalaryAmount===''||job.performanceSalaryAmount===''){hint.hidden=true;return;}
@@ -648,6 +652,9 @@
     payrollManagement.closeEditor(false);
     const hash=location.hash||'#/offers';activeRoute=hash;
     const parts=hash.replace(/^#\//,'').split('/');
+    if(parts[0]==='payroll'&&parts[1]==='jobs'&&!jobDataEnabled){
+      history.replaceState(null,'','#/payroll/projects');route();return;
+    }
     if(parts[0]==='hrg'&&parts[1]==='salary-change'){
       closeOfferForm();
       payrollManagement.renderApplications();
