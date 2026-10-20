@@ -413,6 +413,7 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
 #offer-dialog .salary-subheading h3{font-size:14px;color:#555;font-weight:600}
 #offer-dialog .signing-bonus-module h3{font-size:14px;color:#b15a06;margin-bottom:14px}
 #offer-dialog .monthly-rule-controls{gap:10px 16px}
+#offer-dialog .monthly-rule-controls.amount-only-controls{grid-template-columns:repeat(3,minmax(0,1fr))}
 #offer-dialog .monthly-rule-controls .field>label{font-size:13px}
 #offer-dialog .bonus-rule{padding:11px 0;border-color:#ccc}
 #offer-dialog .bonus-rule-controls .field>label{font-size:13px}
@@ -475,7 +476,7 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
   #offer-dialog .headcount-item span{font-size:11px}
   #offer-dialog .headcount-caption{padding:6px 2px 0}
   #offer-dialog .salary-submodule,#offer-dialog .signing-bonus-module{margin:10px 2px 14px;padding:12px 10px}
-  #offer-dialog .monthly-rule-controls,#offer-dialog .bonus-rule-controls{grid-template-columns:1fr}
+  #offer-dialog .monthly-rule-controls,#offer-dialog .monthly-rule-controls.amount-only-controls,#offer-dialog .bonus-rule-controls{grid-template-columns:1fr}
   #offer-dialog .signing-settings .field,#offer-dialog .equity-settings .equity-details .field{display:flex;align-items:stretch}
   #offer-dialog .signing-settings .field>label{text-align:left}
   #offer-dialog .signing-amount-row>.field{flex-basis:100%}
@@ -490,3 +491,16 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
   #offer-dialog .form-footer .button{font-size:12px;min-width:60px;padding:7px 10px}
   #offer-dialog .save-state{font-size:11px}
 }
+
+/* Job salary data maintenance. */
+#job-data-page,#job-data-dialog{--primary:#3478d9;--primary-hover:#2465bc;--primary-soft:#edf4ff}
+#job-data-dialog{width:min(760px,calc(100vw - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid #d2d8e0;border-radius:8px}
+#job-data-dialog::backdrop{background:#172a454d}
+#job-data-body{padding:20px 24px}
+#job-data-body .fields{padding:0;gap:18px 24px;grid-template-columns:repeat(2,minmax(0,1fr))}
+#job-data-body input[readonly]{background:#f1f3f6;color:#738096}
+.job-data-note{font-size:12px;color:#7c8a9f;line-height:1.7;margin:0;padding:12px 24px}
+#job-data-body .job-data-note{padding:14px 0 0}
+.job-data-table{min-width:850px}
+.job-data-table th:nth-child(2){width:22%}
+@media(max-width:600px){#job-data-body{padding:16px}#job-data-body .fields{grid-template-columns:1fr}}

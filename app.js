@@ -50,7 +50,7 @@
     {key:'halfYearBonus',label:'半年度绩效',period:'半年',times:2,monthsKey:'halfYearBonusMonths',output:'halfYearAnnual'},
     {key:'annualBonus',label:'年终奖',period:'年度',times:1,monthsKey:'bonusMonths',output:'offerBonus'}
   ];
-  const blankData = () => ({approvalLevel:'普通员工',monthlySplit:'',quarterlyBonusEnabled:'',halfYearBonusEnabled:'',annualBonusEnabled:'',attachments:{},interviewResult:'',rehire:false,superiorReferral:false,noProbationSplit:false,signingBonusEnabled:false,signingPeriods:2,signingSchedule:[],equityEnabled:false,equityContent:''});
+  const blankData = () => ({approvalLevel:'普通员工',monthlySplit:'no',monthlySplitMode:'amount',quarterlyBonusEnabled:'',halfYearBonusEnabled:'',annualBonusEnabled:'',attachments:{},interviewResult:'',rehire:false,superiorReferral:false,signingBonusEnabled:false,signingPeriods:2,signingSchedule:[],equityEnabled:false,equityContent:''});
   const demoSigningBonuses = {
     'demo-68686': { signingBonusEnabled: true, signingBonus: '20000', signingPeriods: 2, signingSchedule: [{ months: '6', ratio: '50' }, { months: '12', ratio: '50' }] },
     'demo-68680': { signingBonusEnabled: true, signingBonus: '12000', signingPeriods: 3, signingSchedule: [{ months: '0', ratio: '30' }, { months: '6', ratio: '30' }, { months: '12', ratio: '40' }] },
@@ -204,35 +204,48 @@
   const check=(key,label)=>`<label class="check-label"><input type="checkbox" id="f-${key}" name="${key}" ${currentRecord[key]?'checked':''}>${label}</label>`;
   const section=(id,title,body,subtitle='')=>`<section class="form-card" id="section-${id}"><div class="section-heading"><span class="section-mark"></span><h2>${title}</h2>${subtitle?`<span class="section-subtitle">${subtitle}</span>`:''}</div>${body}</section>`;
   function normalizeSalaryRules(data) {
-    // Map previous drafts without changing their stored annual bonus amount.
-    if(data.monthlySplit===undefined){
-      const ratios=String(data.salaryRatio||'100:0').split(':');
-      data.monthlySplit=number(ratios[1])>0?'yes':'no';
-      data.monthlySplitMode='ratio';data.fixedSalaryRatio=ratios[0];data.performanceSalaryRatio=ratios[1];
+    // Convert a copy on open; persisted drafts are untouched until the user saves.
+    const oldBase=number(data.employeeType==='实习生'&&data.internSalary!==undefined?data.internSalary:(data.salaryStandard??data.regularSalary));
+    data.regularSalary=data.salaryStandard=oldBase||data.salaryStandard||data.regularSalary||'';
+    const ratios=String(data.salaryRatio||'100:0').split(':');
+    if(data.monthlySplit===undefined)data.monthlySplit=number(ratios[1])>0?'yes':'no';
+    if(!data.monthlySplit)data.monthlySplit='no';
+    if(data.monthlySplit==='yes'&&data.monthlySplitMode!=='amount'){
+      const fixedRatio=number(data.fixedSalaryRatio??ratios[0]);
+      data.fixedSalaryAmount=(Math.round(oldBase*fixedRatio)/100).toFixed(2);
+      data.performanceSalaryAmount=((Math.round(oldBase*100)-Math.round(oldBase*fixedRatio))/100).toFixed(2);
+    }else if(data.fixedSalaryAmount===undefined||(data.monthlySplit==='no'&&data.salaryRulesVersion!==2)){
+      data.fixedSalaryAmount=oldBase?String(oldBase):'';
     }
+    data.monthlySplitMode='amount';
+    if(data.monthlySplit==='no')data.performanceSalaryAmount='0';
     for(const item of bonusItems){
-      if(data[`${item.key}Enabled`]!==undefined)continue;
-      if(item.key!=='annualBonus'){data[`${item.key}Enabled`]='no';continue;}
-      const base=number(data.employeeType==='实习生'?data.internSalary:data.regularSalary);
-      const hasAmount=data.offerBonus!==undefined&&data.offerBonus!=='';
-      const months=number(data.bonusMonths);
-      data.annualBonusEnabled=(hasAmount?number(data.offerBonus)>0:months>0)?'yes':'no';
-      data.annualBonusType=months>0&&(!hasAmount||Math.round(base*months*100)===Math.round(number(data.offerBonus)*100))?'months':'amount';
-      data.annualBonusAmount=hasAmount?data.offerBonus:'';
+      if(data[item.key+'Enabled']===undefined){
+        if(item.key!=='annualBonus')data[item.key+'Enabled']='no';
+        else {
+          const hasAmount=data.offerBonus!==undefined&&data.offerBonus!=='';
+          const months=number(data.bonusMonths);
+          data.annualBonusEnabled=(hasAmount?number(data.offerBonus)>0:months>0)?'yes':'no';
+          data.annualBonusType=months>0&&(!hasAmount||Math.round(oldBase*months*100)===Math.round(number(data.offerBonus)*100))?'months':'amount';
+          data.annualBonusAmount=hasAmount?data.offerBonus:'';
+        }
+      }
+      if(item.key!=='annualBonus'){
+        if(data[item.key+'Type']==='months')data[item.key+'Amount']=oldBase>0?(Math.round(oldBase*number(data[item.monthsKey])*100)/100).toFixed(2):'';
+        data[item.key+'Type']='amount';
+      }
     }
   }
   function monthlySalaryModule() {
     return `<section class="salary-submodule" id="monthly-salary-module" aria-labelledby="monthly-salary-title">
       <div class="salary-subheading"><h3 id="monthly-salary-title">月薪结构</h3></div>
-      <div class="monthly-rule-controls">${selectField('monthlySplit','月薪是否拆分',[['no','否'],['yes','是']],true)}
-      <fieldset id="monthly-split-details" class="salary-rule-details">
-        ${selectField('monthlySplitMode','拆分方式',[['ratio','按比例拆分'],['amount','按金额拆分']])}
-        <fieldset id="monthly-ratio-fields" class="salary-rule-fields">${f('fixedSalaryRatio','固定工资比例',{type:'number',suffix:'%',max:100,placeholder:'例如 80'})}${f('performanceSalaryRatio','绩效工资比例',{type:'number',suffix:'%',max:100,placeholder:'例如 20'})}</fieldset>
-        <fieldset id="monthly-amount-fields" class="salary-rule-fields">${amountField('fixedSalaryAmount','固定工资金额',{placeholder:'例如 20000'})}${amountField('performanceSalaryAmount','绩效工资金额',{placeholder:'例如 10000'})}</fieldset>
-        <div class="monthly-rule-notes"><p class="salary-rule-hint" id="monthly-split-basis"></p>
-        <div id="probation-split-setting">${check('noProbationSplit','试用期不拆分绩效')}</div></div>
-        <div id="monthly-split-error" class="salary-rule-error" role="alert" hidden></div>
-      </fieldset></div>
+      <div class="monthly-rule-controls amount-only-controls">${selectField('monthlySplit','月薪是否拆分',[['no','否'],['yes','是']],true)}
+        ${amountField('fixedSalaryAmount','固定工资金额',{required:true,placeholder:'请输入固定工资金额'})}
+        <fieldset id="monthly-split-details" class="salary-rule-details">${amountField('performanceSalaryAmount','绩效工资金额',{readonly:true,placeholder:'自动计算'})}</fieldset>
+      </div>
+      <p class="salary-rule-hint" id="monthly-split-basis">绩效工资 = 薪资标准 − 固定工资；不拆分时全部计入固定工资。</p>
+      <p class="salary-rule-hint" id="job-salary-source" hidden></p>
+      <div id="monthly-split-error" class="salary-rule-error" role="alert" hidden></div>
       <div class="salary-breakdown" id="monthly-split-summary" aria-live="polite"></div>
     </section>`;
   }
@@ -240,11 +253,11 @@
     return `<section class="salary-submodule" id="performance-bonus-module" aria-labelledby="performance-bonus-title">
       <div class="salary-subheading"><h3 id="performance-bonus-title">绩效与奖金目标</h3></div>
       ${bonusItems.map(item=>`<div class="bonus-rule" id="${item.key}-rule">
-        <div class="bonus-rule-controls">${selectField(`${item.key}Enabled`,`是否有${item.label}`,[['no','否'],['yes','是']],true)}
+        <div class="bonus-rule-controls">${selectField(item.key+'Enabled','是否有'+item.label,[['no','否'],['yes','是']],true)}
         <fieldset id="${item.key}-details" class="bonus-rule-details">
-          ${selectField(`${item.key}Type`,'目标填写方式',[['amount','目标金额'],['months','目标月数']])}
-          ${amountField(`${item.key}Amount`,'目标金额',{min:0.01,placeholder:'请输入数字',hint:`元 / ${item.period}`})}
-          ${f(item.monthsKey,'目标月数',{type:'number',min:0.01,suffix:'个月',placeholder:'请输入月数'})}
+          ${item.key==='annualBonus'?selectField('annualBonusType','年终奖填写方式',[['amount','金额'],['months','月数']]):''}
+          ${amountField(item.key+'Amount',item.label+'目标金额',{min:0.01,placeholder:'请输入金额',hint:item.key==='annualBonus'?'填写全年年终奖目标金额。':'填写每'+item.period+'的发放金额，年度按 '+item.times+' 次计算。'})}
+          ${item.key==='annualBonus'?f('bonusMonths','年终奖目标月数',{type:'number',min:0.01,suffix:'个月',placeholder:'请输入月数',hint:'年终奖金额 = 薪资标准 × 目标月数。'}):''}
         </fieldset></div>
         <div class="bonus-target-summary" id="${item.key}-summary" aria-live="polite"></div>
       </div>`).join('')}
@@ -279,7 +292,7 @@
     let mealField=selectField('meal','餐补',[200,300,350,400,450,[0,'无']]);
     // Preserve saved amounts from the previous option list until a new option is chosen.
     if([500,800,1000].includes(number(currentRecord.meal)))mealField=mealField.replace('</select>',`<option value="${escapeHTML(currentRecord.meal)}" selected hidden>${escapeHTML(currentRecord.meal)}</option></select>`);
-    const salary=`<div class="fields">${selectField('grade','职级',Array.from({length:12},(_,index)=>index+8),true,{preserveValue:true})}${amountField('internSalary','实习工资',{hint:'实习生填写'})}${amountField('probationSalary','试用期工资',{required:true,hint:'月薪总额',crKey:'probationCR'})}${amountField('regularSalary','转正工资',{required:true,hint:'月薪总额',crKey:'regularCR'})}</div>
+    const salary=`<div class="fields">${selectField('grade','职级',Array.from({length:12},(_,index)=>index+8),true,{preserveValue:true})}${amountField('regularSalary','薪资标准',{required:true,hint:'填写固定工资与绩效工资的合计金额',crKey:'regularCR'})}</div>
       ${monthlySalaryModule()}${performanceBonusModule()}${signingBonusModule()}${equityModule()}
       <div class="fields">${mealField}${amountField('relocation','搬家费')}${amountField('communication','通讯补贴')}${amountField('housing','住房补贴')}${amountField('transport','交通补助')}</div>`;
     const compareRows=[
@@ -297,7 +310,7 @@
     const attachments=`<div class="upload-intro">${icon('info')}<span>每个文件不大于 2MB，支持 PDF、Word（.doc / .docx）和 Excel 97–2003（.xls）。Excel 请另存为对应格式，不要仅修改后缀名。提交前请上传个人简历和薪资证明。</span></div><div class="attachment-list">${fileTypes.map(({key,label,required})=>`<div class="attachment-row" data-file-row="${key}"><div class="attachment-type">${icon('files')}<span>${required?'<span class="required">*</span>':''}${label}</span></div><div class="file-info" id="file-info-${key}">未上传附件</div><div class="attachment-actions"><input class="file-input" type="file" id="file-${key}" data-upload="${key}" accept=".pdf,.doc,.docx,.xls" aria-label="上传${label}"><button type="button" class="button" data-upload-button="${key}">${icon('upload')}上传文件</button><button type="button" class="icon-button" data-download="${key}" aria-label="下载${label}" hidden>${icon('download')}</button><button type="button" class="icon-button" data-remove-file="${key}" aria-label="删除${label}" hidden>${icon('trash')}</button></div></div>`).join('')}</div>`;
     $('#offer-modal-header').replaceChildren();$('#offer-modal-footer').replaceChildren();
     formHost.innerHTML=`<div class="page-heading form-heading"><div class="heading-left"><div><h1 id="offer-dialog-title">${title}</h1><p>流程编号：${escapeHTML(record.processNo)}<span style="margin:0 10px;color:#d9dde4">|</span>审批状态：${badge(editing?record.status:'unsaved')}</p></div></div><div class="heading-actions">${detail && ['draft','rejected'].includes(record.status)?'<button class="button primary" id="edit-detail">编辑表单</button>':''}</div><button type="button" class="icon-button offer-modal-close" data-back aria-label="关闭Offer弹窗">${icon('x')}</button></div>
-      <div class="form-layout"><div class="form-stack">${record.rejectReason?`<div class="detail-banner"><span>退回原因：${escapeHTML(record.rejectReason)}</span></div>`:record.closeReason?`<div class="detail-banner"><span>关闭原因：${escapeHTML(record.closeReason)}</span></div>`:''}${detail?`<div class="detail-banner"><span>${record.status==='pending'?'当前流程等待审批，操作人：'+escapeHTML(record.operator):'正在查看已保存的流程信息。'}${record.demo?' 该记录为示例数据。':''}</span></div>`:''}<div id="form-errors" role="alert" class="form-error-summary" hidden></div><form id="offer-form" class="${detail?'detail-mode':''}" novalidate>${section('basic',sectionNames[0],basic,'录用信息')}${section('organization',sectionNames[1],org)}${section('headcount',sectionNames[2],headcount)}${section('position',sectionNames[3],position)}${section('salary',sectionNames[4],salary,'人民币 · CNY')}${section('comparison',sectionNames[5],comparison,'自动计算')}${section('attachments',sectionNames[6],attachments)}<datalist id="jobs">${['产品经理','前端开发工程师','后端开发工程师','测试工程师','视觉设计师','课程教研专家','品牌营销经理','内容策划','招聘专员','财务分析师'].map(job=>`<option value="${job}">`).join('')}</datalist></form><div class="form-footer"><span class="save-state" id="save-state">${icon('save')}${detail?'最后更新：'+escapeHTML(record.updatedAt||'—'):'填写后可保存草稿，稍后继续'}</span><div class="actions"><button class="button" data-back>${detail?'返回列表':'取消'}</button>${detail?'':'<button class="button" id="save-draft">保存草稿</button><button class="button primary" id="submit-offer">提交Offer</button>'}</div></div></div></div>`;
+      <div class="form-layout"><div class="form-stack">${record.rejectReason?`<div class="detail-banner"><span>退回原因：${escapeHTML(record.rejectReason)}</span></div>`:record.closeReason?`<div class="detail-banner"><span>关闭原因：${escapeHTML(record.closeReason)}</span></div>`:''}${detail?`<div class="detail-banner"><span>${record.status==='pending'?'当前流程等待审批，操作人：'+escapeHTML(record.operator):'正在查看已保存的流程信息。'}${record.demo?' 该记录为示例数据。':''}</span></div>`:''}<div id="form-errors" role="alert" class="form-error-summary" hidden></div><form id="offer-form" class="${detail?'detail-mode':''}" novalidate>${section('basic',sectionNames[0],basic,'录用信息')}${section('organization',sectionNames[1],org)}${section('headcount',sectionNames[2],headcount)}${section('position',sectionNames[3],position)}${section('salary',sectionNames[4],salary,'人民币 · CNY')}${section('comparison',sectionNames[5],comparison,'自动计算')}${section('attachments',sectionNames[6],attachments)}<datalist id="jobs">${payrollManagement.jobOptions().map(job=>`<option value="${escapeHTML(job.name)}">`).join('')}</datalist></form><div class="form-footer"><span class="save-state" id="save-state">${icon('save')}${detail?'最后更新：'+escapeHTML(record.updatedAt||'—'):'填写后可保存草稿，稍后继续'}</span><div class="actions"><button class="button" data-back>${detail?'返回列表':'取消'}</button>${detail?'':'<button class="button" id="save-draft">保存草稿</button><button class="button primary" id="submit-offer">提交Offer</button>'}</div></div></div></div>`;
     $('#offer-modal-header').append($('.form-heading',formHost));
     $('#offer-modal-footer').append($('.form-footer',formHost));
     bindForm();updateHeadcount();calculate();fileTypes.forEach(t=>renderAttachment(t.key));
@@ -314,7 +327,7 @@
   function collectForm() {
     const data={...currentRecord};
     for(const [key,value] of new FormData($('#offer-form'))) { if(typeof value==='string')data[key]=value.trim(); }
-    ['rehire','superiorReferral','noProbationSplit','signingBonusEnabled'].forEach(key=>data[key]=$(`[name="${key}"]`).checked);
+    ['rehire','superiorReferral','signingBonusEnabled'].forEach(key=>data[key]=$(`[name="${key}"]`).checked);
     data.signingBonus=$('#f-signingBonus').value;
     data.signingPeriods=$('#f-signingPeriods').value;
     data.signingSchedule=readSigningSchedule();
@@ -324,6 +337,10 @@
     $$('#monthly-salary-module [name],#performance-bonus-module [name]').forEach(input=>{
       data[input.name]=input.type==='checkbox'?input.checked:input.value.trim();
     });
+    data.monthlySplitMode='amount';data.salaryRulesVersion=2;
+    data.salaryStandard=data.regularSalary=salaryMonthly();
+    data.quarterlyBonusType=data.halfYearBonusType='amount';
+    for(const key of ['noProbationSplit','probationSalary','internSalary','probationCR','salaryRatio','fixedSalaryRatio','performanceSalaryRatio','quarterlyBonusMonths','halfYearBonusMonths'])delete data[key];
     Object.assign(data,bonusTotals());
     data.attachments={...currentRecord.attachments};return data;
   }
@@ -343,31 +360,26 @@
     }
   }
   function salaryMonthly() {
-    return number($('#f-employeeType').value==='实习生'?$('#f-internSalary').value:$('#f-regularSalary').value);
-  }
-  function hasProbationSalary() {
-    return $('#f-employeeType').value!=='实习生'&&$('#f-probation').value!=='无试用期';
+    return number($('#f-regularSalary').value);
   }
   function syncSalaryFields() {
     const split=$('#f-monthlySplit').value==='yes';
-    const mode=$('#f-monthlySplitMode').value;
-    const group=(id,active)=>{const el=$(`#${id}`);el.hidden=!active;el.disabled=!active;};
-    group('monthly-split-details',split);setRequired('monthlySplitMode',split);
-    group('monthly-ratio-fields',split&&mode==='ratio');
-    group('monthly-amount-fields',split&&mode==='amount');
-    for(const key of ['fixedSalaryRatio','performanceSalaryRatio'])setRequired(key,split&&mode==='ratio');
-    for(const key of ['fixedSalaryAmount','performanceSalaryAmount'])setRequired(key,split&&mode==='amount');
-    $('#probation-split-setting').hidden=!hasProbationSalary();
-    $('#f-noProbationSplit').disabled=readOnly||!split||!hasProbationSalary();
-    const intern=$('#f-employeeType').value==='实习生';
-    $('#monthly-split-basis').textContent=`${mode==='amount'?'固定与绩效金额合计须等于':mode==='ratio'?'比例合计须为 100%，拆分基于':'拆分基于'}${intern?'实习工资':'转正工资'}${salaryMonthly()>0?` ${money(salaryMonthly())}`:''}。${hasProbationSalary()?'试用期按相同比例计算。':''}`;
+    const group=(id,active)=>{const el=$('#'+id);el.hidden=!active;el.disabled=!active;};
+    group('monthly-split-details',split);setRequired('fixedSalaryAmount',split);
+    const fixed=$('#f-fixedSalaryAmount'),performance=$('#f-performanceSalaryAmount'),standard=$('#f-regularSalary');
+    fixed.readOnly=readOnly||!split;
+    if(!split)fixed.value=standard.value;
+    performance.value=!split?'0':standard.value!==''&&fixed.value!==''?((Math.round(number(standard.value)*100)-Math.round(number(fixed.value)*100))/100).toFixed(2):'';
     for(const item of bonusItems){
-      const enabled=$(`#f-${item.key}Enabled`).value==='yes';
-      const type=$(`#f-${item.key}Type`).value;
-      group(`${item.key}-details`,enabled);setRequired(`${item.key}Type`,enabled);
-      for(const [key,kind] of [[`${item.key}Amount`,'amount'],[item.monthsKey,'months']]){
-        const active=enabled&&type===kind;const input=$(`#f-${key}`);
-        input.closest('.field').hidden=!active;input.disabled=!active;setRequired(key,active);
+      const enabled=$('#f-'+item.key+'Enabled').value==='yes';
+      const annual=item.key==='annualBonus';
+      const type=annual?$('#f-annualBonusType').value:'amount';
+      group(item.key+'-details',enabled);
+      if(annual)setRequired('annualBonusType',enabled);
+      const fields=annual?[[item.key+'Amount','amount'],[item.monthsKey,'months']]:[[item.key+'Amount','amount']];
+      for(const [key,kind] of fields){
+        const active=enabled&&type===kind;const input=$('#f-'+key);
+        input.closest('.field').hidden=!active;input.disabled=readOnly||!active;setRequired(key,active);
       }
     }
     $$('#monthly-salary-module :disabled,#performance-bonus-module :disabled').forEach(input=>{
@@ -376,47 +388,27 @@
     });
   }
   function monthlySplitIssue() {
-    if($('#f-monthlySplit').value!=='yes')return null;
-    const mode=$('#f-monthlySplitMode').value;
-    const keys=mode==='ratio'?['fixedSalaryRatio','performanceSalaryRatio']:mode==='amount'?['fixedSalaryAmount','performanceSalaryAmount']:[];
-    const inputs=keys.map(key=>$(`#f-${key}`));
-    if(inputs.length!==2||inputs.some(input=>!input.value||!input.validity.valid))return null;
-    const sum=inputs.reduce((total,input)=>total+Math.round(Number(input.value)*100),0);
-    if(mode==='ratio'&&sum!==10000)return {el:inputs[0],message:'固定工资与绩效工资比例合计须为 100%'};
-    if(mode==='amount'&&salaryMonthly()>0&&sum!==Math.round(salaryMonthly()*100))return {el:inputs[0],message:`固定工资与绩效工资金额合计须等于${$('#f-employeeType').value==='实习生'?'实习工资':'转正工资'} ${money(salaryMonthly())}`};
+    const inputs=[$('#f-regularSalary'),$('#f-fixedSalaryAmount')];
+    if(inputs.some(input=>input.value===''||!input.validity.valid))return null;
+    if(salaryMonthly()<=0||salaryMonthly()>999999999)return {el:inputs[0],message:'薪资标准须大于 0，且不超过 999999999 元'};
+    if(Math.round(number(inputs[1].value)*100)>Math.round(salaryMonthly()*100))return {el:inputs[1],message:'固定工资不能超过薪资标准，绩效工资须大于或等于 0'};
     return null;
   }
   function updateMonthlySplit() {
-    const decision=$('#f-monthlySplit').value;const mode=$('#f-monthlySplitMode').value;
-    const base=salaryMonthly();const cents=Math.round(base*100);
     const issue=monthlySplitIssue();const error=$('#monthly-split-error');
     error.hidden=!issue;error.textContent=issue?.message||'';
     if(!issue)$$('[aria-describedby="monthly-split-error"]').forEach(input=>{input.removeAttribute('aria-invalid');input.removeAttribute('aria-describedby');});
-    let fixed=null;
-    if(decision==='no'&&base>0)fixed=cents;
-    if(decision==='yes'&&base>0&&!issue){
-      const keys=mode==='ratio'?['fixedSalaryRatio','performanceSalaryRatio']:mode==='amount'?['fixedSalaryAmount','performanceSalaryAmount']:[];
-      if(keys.length===2&&keys.every(key=>{const input=$(`#f-${key}`);return input.value!==''&&input.validity.valid;})){
-        fixed=mode==='ratio'?Math.round(cents*number($('#f-fixedSalaryRatio').value)/100):Math.round(number($('#f-fixedSalaryAmount').value)*100);
-      }
-    }
-    const label=$('#f-employeeType').value==='实习生'?'实习月薪':'转正月薪';
-    const row=(label,total,fixed)=>`<div><span>${label}</span><strong>固定 ${money(fixed/100)}</strong><span>+</span><strong>绩效 ${money((total-fixed)/100)}</strong><span>= ${money(total/100)}</span></div>`;
-    let summary=fixed===null?'':row(label,cents,fixed);
-    if(fixed!==null&&hasProbationSalary()&&number($('#f-probationSalary').value)>0){
-      const probation=Math.round(number($('#f-probationSalary').value)*100);
-      const fixedRatio=mode==='ratio'?number($('#f-fixedSalaryRatio').value)/100:fixed/cents;
-      const probationFixed=decision==='no'||$('#f-noProbationSplit').checked?probation:Math.round(probation*fixedRatio);
-      summary+=row('试用期月薪',probation,probationFixed);
-    }
-    $('#monthly-split-summary').innerHTML=summary;
-    $('#monthly-split-summary').hidden=!summary;
+    const fixed=number($('#f-fixedSalaryAmount').value);
+    const base=salaryMonthly();
+    const ready=$('#f-fixedSalaryAmount').value!==''&&($('#f-monthlySplit').value!=='yes'||$('#f-performanceSalaryAmount').value!=='');
+    $('#monthly-split-summary').textContent=ready&&!issue?'固定 '+money(fixed)+' + 绩效 '+money((Math.round(base*100)-Math.round(fixed*100))/100)+' = 薪资标准 '+money(base):'';
+    $('#monthly-split-summary').hidden=!$('#monthly-split-summary').textContent;
   }
   function bonusTarget(item) {
     const enabled=$(`#f-${item.key}Enabled`).value;
     if(enabled==='no')return 0;
     if(enabled!=='yes')return null;
-    const type=$(`#f-${item.key}Type`).value;
+    const type=item.key==='annualBonus'?$('#f-annualBonusType').value:'amount';
     const input=type==='amount'?$(`#f-${item.key}Amount`):type==='months'?$(`#f-${item.monthsKey}`):null;
     if(!input||!input.value||!input.validity.valid||(type==='months'&&salaryMonthly()<=0))return null;
     return Math.round(number(input.value)*(type==='months'?salaryMonthly():1)*100)/100;
@@ -494,12 +486,23 @@
     $('#offer-form').addEventListener('input',event=>{
       if(event.target.type==='file')return;
       markDirty();const wrapper=event.target.closest('.field');wrapper?.classList.remove('invalid');wrapper?.querySelector('.field-error')?.remove();event.target.removeAttribute('aria-invalid');event.target.removeAttribute('aria-describedby');
-      if(event.target.closest('#monthly-salary-module,#performance-bonus-module')||['regularSalary','internSalary','employeeType','probation'].includes(event.target.name))syncSalaryFields();
+      if(event.target.closest('#monthly-salary-module,#performance-bonus-module')||['regularSalary','employeeType','probation'].includes(event.target.name))syncSalaryFields();
       if(event.target.name==='signingPeriods')renderSigningRows();
       if(event.target.name==='signingBonusEnabled')setSigningEnabled();
       if(event.target.name==='equityEnabled')setEquityEnabled();
       if(event.target.closest('#signing-bonus-module'))$('#signing-schedule-error').hidden=true;
       calculate();
+    });
+    $('#f-job').addEventListener('change',()=>{
+      const job=payrollManagement.jobOptions().find(item=>item.name===$('#f-job').value.trim());
+      const hint=$('#job-salary-source');
+      if(!job||job.fixedSalaryAmount===''||job.performanceSalaryAmount===''){hint.hidden=true;return;}
+      $('#f-fixedSalaryAmount').value=job.fixedSalaryAmount;
+      $('#f-regularSalary').value=job.salaryStandard??((Math.round(number(job.fixedSalaryAmount)*100)+Math.round(number(job.performanceSalaryAmount)*100))/100);
+      $('#f-performanceSalaryAmount').value=job.performanceSalaryAmount;
+      $('#f-monthlySplit').value=number(job.performanceSalaryAmount)>0?'yes':'no';
+      hint.textContent='已带出「'+job.name+'」维护的工资金额，可按本次 Offer 调整。';hint.hidden=false;
+      markDirty();syncSalaryFields();calculate();
     });
     $('#f-department').addEventListener('change',()=>{
       const dept=departments[$('#f-department').value];$('#f-departmentCode').value=dept?.code||'';$('#f-departmentPath').value=dept?.path||'';$('#f-manager').value=dept?.manager||'';$('#f-business').value=dept?.business||'';updateHeadcount();
@@ -521,7 +524,6 @@
     if(!required)$('.required',label)?.remove();
   }
   function setConditionalFields() {
-    const intern=$('#f-employeeType').value==='实习生';setRequired('internSalary',intern);setRequired('regularSalary',!intern);setRequired('probationSalary',!intern&&$('#f-probation').value!=='无试用期');
     const replacing=$('#f-recruitReason').value==='人员替换';setRequired('replacement',replacing);setRequired('replacementDate',replacing);
     syncSalaryFields();
   }
@@ -544,7 +546,6 @@
     const growth=(next,prev)=>next!==null&&prev>0?`${next>=prev?'+':''}${((next-prev)/prev*100).toFixed(1)}%`:'—';
     $('#ttc-growth').textContent=`TTC 涨幅 ${growth(ttc,previousTTC)}`;$('#annual-growth').textContent=`年薪涨幅 ${growth(annual,previousAnnual)}`;
     const median={P1:6000,P2:9000,P3:12000,P4:16000,P5:22000,P6:30000,P7:40000,P8:55000,M1:28000,M2:42000,M3:60000}[$('#f-grade').value];
-    $('#f-probationCR').value=median&&get('probationSalary')? (get('probationSalary')/median*100).toFixed(1):'';
     $('#f-regularCR').value=median&&monthly?(monthly/median*100).toFixed(1):'';
     for(const item of bonusItems){
       const target=bonusTarget(item);const enabled=$(`#f-${item.key}Enabled`).value;
@@ -564,7 +565,7 @@
       if(input.required&&!input.value.trim())message=`请填写${label}`;
       else if(input.validity.typeMismatch)message='请输入有效的电子邮件地址';
       else if(!input.validity.valid)message=`请填写有效的${label}${input.type==='number'&&input.min!==''&&input.max!==''?`（${input.min}–${input.max}）`:''}`;
-      if(input.required&&['internSalary','regularSalary','probationSalary','signingBonus'].includes(input.name)&&number(input.value)<=0)message=`${label}须大于 0`;
+      if(input.required&&['regularSalary','signingBonus'].includes(input.name)&&number(input.value)<=0)message=`${label}须大于 0`;
       if(message){errors.push({el:input,message});const errorId=`error-${input.id||input.name}`;input.setAttribute('aria-invalid','true');input.setAttribute('aria-describedby',errorId);const wrapper=input.closest('.field')||input.parentElement;wrapper.classList.add('invalid');const hint=document.createElement('span');hint.className='field-error';hint.id=errorId;hint.textContent=message;wrapper.append(hint);}
     });
     const splitIssue=monthlySplitIssue();
@@ -584,7 +585,7 @@
     if(submit&&!validateForm())return;
     const data=collectForm();
     if(submit) {
-      openDialog('确认提交Offer',`<p>即将为 <strong>${escapeHTML(data.name)}</strong> 发起录用流程。</p><p style="margin-top:10px">招聘职位：${escapeHTML(data.job)}<br>计划到岗：${escapeHTML(data.startDate)}<br>月薪：${money(data.employeeType==='实习生'?data.internSalary:data.regularSalary)}</p><p style="margin-top:12px;color:#98a1ae;font-size:11px">提交后将进入「进行中」。本地演示仅更新流程状态，不会发送邮件或启动真实审批。</p>`,()=>persistForm(data,true),'确认提交');
+      openDialog('确认提交Offer',`<p>即将为 <strong>${escapeHTML(data.name)}</strong> 发起录用流程。</p><p style="margin-top:10px">招聘职位：${escapeHTML(data.job)}<br>计划到岗：${escapeHTML(data.startDate)}<br>薪资标准：${money(data.regularSalary)}</p><p style="margin-top:12px;color:#98a1ae;font-size:11px">提交后将进入「进行中」。本地演示仅更新流程状态，不会发送邮件或启动真实审批。</p>`,()=>persistForm(data,true),'确认提交');
     } else persistForm(data,false);
   }
   function persistForm(data,submit) {
@@ -655,12 +656,12 @@
       window.scrollTo(0,0);
       return;
     }
-    if(parts[0]==='payroll'&&['projects','signing-bonus'].includes(parts[1])){
+    if(parts[0]==='payroll'&&['projects','signing-bonus','jobs'].includes(parts[1])){
       const closingModal=closeOfferForm();
       const projectsPage=parts[1]==='projects';
-      if(projectsPage)payrollManagement.renderProjects();else payrollManagement.renderLedger();
+      if(projectsPage)payrollManagement.renderProjects();else if(parts[1]==='jobs')payrollManagement.renderJobs();else payrollManagement.renderLedger();
       syncShellNavigation(`#/payroll/${parts[1]}`);
-      document.title=`${projectsPage?'薪酬结构管理':'签约金台账'} · HR便捷工作台`;
+      document.title=`${projectsPage?'薪酬结构管理':parts[1]==='jobs'?'职务数据维护':'签约金台账'} · HR便捷工作台`;
       if(closingModal){window.scrollTo(0,modalReturnScroll);$(modalReturnFocus)?.focus({preventScroll:true});}else window.scrollTo(0,0);
       return;
     }

@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Offer流程管理 · HR便捷工作台</title>
-  <link rel="stylesheet" href="styles.css?v=20261019-payroll-change-fields">
+  <link rel="stylesheet" href="styles.css?v=20261019-offer-salary">
   <script src="payroll-policy.js?v=20261014-signing-demo" defer></script>
   <script src="employee-payroll.js?v=20261019-payroll-change-fields" defer></script>
   <script src="salary-change.js?v=20261014-signing-demo" defer></script>
-  <script src="payroll.js?v=20261019-agreement-example" defer></script>
-  <script src="app.js?v=20261014-signing-demo" defer></script>
+  <script src="job-data.js?v=20261019-offer-salary" defer></script>
+  <script src="payroll.js?v=20261019-offer-salary" defer></script>
+  <script src="app.js?v=20261019-offer-salary" defer></script>
 </head>
 <body>
   <header class="reference-header">
@@ -45,6 +46,7 @@
         <button type="button" class="shell-parent" id="payroll-toggle" aria-expanded="true" aria-controls="payroll-submenu"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 7V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2Zm0 3h20v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V10Z"/></svg><span>薪酬管理</span></button>
         <div class="reference-submenu" id="payroll-submenu">
           <a href="#/payroll/projects" class="shell-subitem" data-payroll-page="projects">薪酬结构管理</a>
+          <a href="#/payroll/jobs" class="shell-subitem" data-payroll-page="jobs">职务数据维护</a>
           <a href="#/payroll/signing-bonus" class="shell-subitem" data-payroll-page="signing-bonus">签约金台账</a>
         </div>
       </div>
@@ -63,6 +65,13 @@
       <div class="dialog-heading"><h2 id="employee-payroll-title">编辑发薪项目</h2><button type="button" class="icon-button" data-close-employee-payroll aria-label="关闭发薪项目编辑">×</button></div>
       <div id="employee-payroll-body"></div>
       <div class="dialog-footer"><button type="button" class="button" data-close-employee-payroll>取消</button><button type="submit" class="button primary" id="save-employee-payroll">保存</button></div>
+    </form>
+  </dialog>
+  <dialog id="job-data-dialog" aria-labelledby="job-data-title">
+    <form id="job-data-form">
+      <div class="dialog-heading"><h2 id="job-data-title">编辑职务</h2><button type="button" class="icon-button" data-close-job aria-label="关闭职务编辑">×</button></div>
+      <div id="job-data-body"></div>
+      <div class="dialog-footer"><button type="button" class="button" data-close-job>取消</button><button type="submit" class="button primary">保存</button></div>
     </form>
   </dialog>
   <div id="toast" class="toast" popover="manual" role="status" aria-live="polite" hidden></div>
