@@ -348,8 +348,23 @@ window.createEmployeePayroll = ({ app, esc, icon, money, stamp, toast, openDialo
     if (target) $(target, body)?.focus();
     error.scrollIntoView({ block: 'nearest' });
   }
+  function saveMaintenance(employee, compensation, date) {
+    loadError = false;
+    const latest = loadEmployees();
+    if (loadError) throw new Error('读取最新薪酬信息失败，请刷新后重试。');
+    const current = latest.find(row => row.id === employee.id);
+    if (!current || JSON.stringify(current.compensation) !== JSON.stringify(employee.compensation) || JSON.stringify(current.history || []) !== JSON.stringify(employee.history || []) || current.effectiveDate !== employee.effectiveDate || current.updatedAt !== employee.updatedAt) throw new Error('该员工薪酬已在其他页面更新，请重新载入后再维护。');
+    const changes = compensationChanges(employee.compensation, compensation);
+    if (date !== (employee.effectiveDate || '')) changes.push({ key: 'effectiveDate', label: '生效日期', before: employee.effectiveDate || '未记录', after: date });
+    if (!changes.length) return false;
+    const changedAt = stamp();
+    const record = { id: crypto.randomUUID(), changedAt, effectiveDate: date, before: structuredClone(employee.compensation), after: structuredClone(compensation), changes, signingBonus: getSigningBonus(employee) };
+    const next = latest.map(row => row.id === employee.id ? { ...row, compensation: structuredClone(compensation), effectiveDate: date, updatedAt: changedAt, history: [...(row.history || []), record] } : row);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { throw new Error('保存失败，请检查浏览器存储后重试；当前填写内容已保留。'); }
+    return true;
+  }
   return {
-    render, closeEditor, openEditor, emptySettings, compensationChanges, getDraftCompensation, getSigningBonus, legacySigningBonus, showError,
+    render, closeEditor, openEditor, openHistory, saveMaintenance, emptySettings, compensationChanges, getDraftCompensation, getSigningBonus, legacySigningBonus, showError,
     markDirty: () => { dirty = true; },
     getEmployees: () => {
       loadError = false;

@@ -37,6 +37,7 @@ window.createPayrollManagement = ({ app, escapeHTML: esc, icon, money, stamp, to
   const employeePayroll = window.createEmployeePayroll({ app, esc, icon, money, stamp, toast, openDialog, pageShell, bindFilters, paginate, pagination, bindPagination, emptyState, getOfferSigningBonus });
   const jobs = window.createJobData({ app, esc, icon, money, stamp, toast, openDialog, pageShell, bindFilters, paginate, pagination, bindPagination, emptyState });
   const renderProjects = employeePayroll.render;
+  const maintenance = window.createSalaryMaintenance({ app, esc, money, stamp, toast, openDialog, employeePayroll });
   const salaryChange = window.createSalaryChange({ app, esc, icon, money, stamp, toast, openDialog, employeePayroll, pageShell, bindFilters, paginate, pagination, bindPagination, emptyState });
 
   function signingPlan(record) {
@@ -117,5 +118,5 @@ window.createPayrollManagement = ({ app, escapeHTML: esc, icon, money, stamp, to
       }).join('')}</tbody><tfoot><tr><th scope="row" colspan="3">合计</th><td>${plan.complete ? '100%' : '待完善'}</td><td>${plan.complete ? money(plan.payments.reduce((sum, value) => sum + value, 0) / 100) : '待完善'}</td></tr></tfoot></table>
       ${plan.complete ? '' : '<p class="ledger-plan-note">请在 Offer 表单完善签约金总金额、发放期数和各期安排。</p>'}</div>`;
   }
-  return { renderProjects, renderLedger, renderApplications: salaryChange.render, renderJobs: jobs.render, jobOptions: jobs.options, hasUnsavedChanges: () => jobs.hasUnsavedChanges() || employeePayroll.hasUnsavedChanges(), unsavedTitle: () => jobs.hasUnsavedChanges() ? '放弃职务数据修改？' : employeePayroll.unsavedTitle(), closeEditor: () => { jobs.closeEditor(false); employeePayroll.closeEditor(false); } };
+  return { renderProjects, renderLedger, renderMaintenance: maintenance.render, renderApplications: salaryChange.render, renderJobs: jobs.render, jobOptions: jobs.options, hasUnsavedChanges: () => jobs.hasUnsavedChanges() || employeePayroll.hasUnsavedChanges() || maintenance.hasUnsavedChanges(), unsavedTitle: () => maintenance.hasUnsavedChanges() ? '放弃薪酬信息修改？' : jobs.hasUnsavedChanges() ? '放弃职务数据修改？' : employeePayroll.unsavedTitle(), closeEditor: () => { jobs.closeEditor(false); employeePayroll.closeEditor(false); maintenance.close(); } };
 };

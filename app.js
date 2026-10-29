@@ -663,12 +663,12 @@
       window.scrollTo(0,0);
       return;
     }
-    if(parts[0]==='payroll'&&['projects','signing-bonus','jobs'].includes(parts[1])){
+    if(parts[0]==='payroll'&&['projects','signing-bonus','jobs','maintenance'].includes(parts[1])){
       const closingModal=closeOfferForm();
       const projectsPage=parts[1]==='projects';
-      if(projectsPage)payrollManagement.renderProjects();else if(parts[1]==='jobs')payrollManagement.renderJobs();else payrollManagement.renderLedger();
+      if(projectsPage)payrollManagement.renderProjects();else if(parts[1]==='maintenance')payrollManagement.renderMaintenance();else if(parts[1]==='jobs')payrollManagement.renderJobs();else payrollManagement.renderLedger();
       syncShellNavigation(`#/payroll/${parts[1]}`);
-      document.title=`${projectsPage?'薪酬结构管理':parts[1]==='jobs'?'职务数据维护':'签约金台账'} · HR便捷工作台`;
+      document.title=`${projectsPage?'薪酬结构管理':parts[1]==='maintenance'?'薪酬信息维护':parts[1]==='jobs'?'职务数据维护':'签约金台账'} · HR便捷工作台`;
       if(closingModal){window.scrollTo(0,modalReturnScroll);$(modalReturnFocus)?.focus({preventScroll:true});}else window.scrollTo(0,0);
       return;
     }

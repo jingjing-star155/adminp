@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Offer流程管理 · HR便捷工作台</title>
-  <link rel="stylesheet" href="styles.css?v=20261019-offer-salary">
+  <link rel="stylesheet" href="styles.css?v=20261029-maintenance">
   <script src="payroll-policy.js?v=20261014-signing-demo" defer></script>
-  <script src="employee-payroll.js?v=20261019-payroll-change-fields" defer></script>
+  <script src="employee-payroll.js?v=20261029-maintenance" defer></script>
+  <script src="salary-maintenance.js?v=20261029-maintenance" defer></script>
   <script src="salary-change.js?v=20261014-signing-demo" defer></script>
   <script src="job-data.js?v=20261019-offer-salary" defer></script>
-  <script src="payroll.js?v=20261019-offer-salary" defer></script>
-  <script src="app.js?v=20261020-job-data-paused" defer></script>
+  <script src="payroll.js?v=20261029-maintenance" defer></script>
+  <script src="app.js?v=20261029-maintenance" defer></script>
 </head>
 <body>
   <header class="reference-header">
@@ -46,6 +47,7 @@
         <button type="button" class="shell-parent" id="payroll-toggle" aria-expanded="true" aria-controls="payroll-submenu"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 7V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2Zm0 3h20v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V10Z"/></svg><span>薪酬管理</span></button>
         <div class="reference-submenu" id="payroll-submenu">
           <a href="#/payroll/projects" class="shell-subitem" data-payroll-page="projects">薪酬结构管理</a>
+          <a href="#/payroll/maintenance" class="shell-subitem" data-payroll-page="maintenance">薪酬信息维护</a>
           <a href="#/payroll/jobs" class="shell-subitem" data-payroll-page="jobs" hidden>职务数据维护</a>
           <a href="#/payroll/signing-bonus" class="shell-subitem" data-payroll-page="signing-bonus">签约金台账</a>
         </div>
