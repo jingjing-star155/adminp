@@ -507,6 +507,9 @@ html.employee-payroll-open,html.employee-payroll-open body{overflow:hidden}
 
 /* Compensation maintenance follows the classic job-data detail layout. */
 .salary-maintenance-page{background:#fff}
+.salary-maintenance-page>.reference-header,.salary-maintenance-page>.reference-sidebar{display:none}
+.salary-maintenance-page>.app-shell{margin-left:0;padding-top:0}
+.salary-maintenance-page .app-shell>main{min-height:100vh;max-width:none}
 .salary-maintenance-page main{padding:16px 20px 26px}
 .salary-maintenance-page .breadcrumb{margin-bottom:14px}
 .sm-page{--primary:#62b88c;--primary-hover:#50a87b;background:#fff;border:1px solid #c6c6c6;border-radius:0;color:#111;font-family:Arial,"Microsoft YaHei",sans-serif;overflow:clip}
