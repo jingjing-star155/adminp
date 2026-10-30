@@ -652,6 +652,7 @@
     payrollManagement.closeEditor(false);
     const hash=location.hash||'#/offers';activeRoute=hash;
     const parts=hash.replace(/^#\//,'').split('/');
+    document.body.classList.toggle('salary-maintenance-page',parts[0]==='payroll'&&parts[1]==='maintenance');
     if(parts[0]==='payroll'&&parts[1]==='jobs'&&!jobDataEnabled){
       history.replaceState(null,'','#/payroll/projects');route();return;
     }
